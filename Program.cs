@@ -1,15 +1,37 @@
+using WebApi.Factories;
+using WebApi.Options;
+using WebApi.Repositorys;
+using WebApi.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
+builder.Services.AddOptions<CellValueOptions>().Bind(builder.Configuration.GetSection("CellValueOptions"));
+WebApiTestConfigurationOptions webApiTestConfigurationOptions = new();
+builder.Configuration.GetSection(nameof(WebApiTestConfigurationOptions)).Bind(webApiTestConfigurationOptions);
 
-// Configure the HTTP request pipeline.
+builder.Services.AddScoped<IGameService, GameService>();
+
+builder.Services.AddScoped<IGameFactory, GameFactory>();
+
+builder.Services.AddScoped<IGameRepository, GameRepository>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost", policy =>
+    {
+        policy.WithOrigins(webApiTestConfigurationOptions.TestUrl)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+var app = builder.Build();
+app.UseCors("AllowLocalhost");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
