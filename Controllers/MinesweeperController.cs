@@ -1,30 +1,49 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using WebApi.Models;
+using WebApi.Options;
 using WebApi.Services;
 
 namespace WebApi.Controllers;
 
 [ApiController]
 [Route("api")]
-public class MinesweeperController(IGameService gameService) : ControllerBase
+public class MinesweeperController(
+    IGameService gameService,
+    IOptions<GameBoardOptions> gameBoardOptions
+) : ControllerBase
 {
     private readonly IGameService _gameService = gameService;
+    private readonly GameBoardOptions _gameBoardOptions = gameBoardOptions.Value;
 
     [HttpPost("new")]
     public ActionResult<GameInfoResponse> NewGame([FromBody] NewGameRequest request)
     {
-        if (request.Width <= 0 || request.Height <= 0 || request.Width > 30 || request.Height > 30)
+        if (ValidateGameBoardSize(request))
         {
             return BadRequest(new ErrorResponse("Некорректные размеры поля."));
         }
 
-        if (request.MinesCount < 1 || request.MinesCount >= request.Width * request.Height)
+        if (ValidateMinesCount(request))
         {
             return BadRequest(new ErrorResponse("Некорректное количество мин."));
         }
 
         var game = _gameService.CreateGame(request.Width, request.Height, request.MinesCount);
         return Ok(_gameService.GetGameInfo(game));
+    }
+
+    private bool ValidateGameBoardSize(NewGameRequest request)
+    {
+        return request.Width <= _gameBoardOptions.MinWidth ||
+            request.Height <= _gameBoardOptions.MinHeight ||
+            request.Width > _gameBoardOptions.MaxWidth ||
+            request.Height > _gameBoardOptions.MaxHeight;
+    }
+
+    private bool ValidateMinesCount(NewGameRequest request)
+    {
+        return request.MinesCount < _gameBoardOptions.MinMinesCount || request.MinesCount >= request.Width * request.Height;
     }
 
     [HttpPost("turn")]

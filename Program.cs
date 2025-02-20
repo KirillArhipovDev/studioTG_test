@@ -10,6 +10,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddOptions<CellValueOptions>().Bind(builder.Configuration.GetSection("CellValueOptions"));
+builder.Services.AddOptions<GameBoardOptions>().Bind(builder.Configuration.GetSection("GameBoardOptions"));
 WebApiTestConfigurationOptions webApiTestConfigurationOptions = new();
 builder.Configuration.GetSection(nameof(WebApiTestConfigurationOptions)).Bind(webApiTestConfigurationOptions);
 
